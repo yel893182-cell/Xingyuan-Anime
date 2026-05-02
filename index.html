@@ -1,0 +1,1211 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="referrer" content="no-referrer">
+    <title>Xingyuan-Anime</title>
+
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/hls.js/dist/hls.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/dplayer/dist/DPlayer.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <style>
+        :root {
+            --primary: #a78bfa;
+            --primary-hover: #c4b5fd;
+            --accent: #f472b6;
+            --bg-dark: #0a0a0f;
+            --bg-panel: rgba(23, 23, 37, 0.8);
+            --text-main: #e2e8f0;
+            --glass: rgba(139, 92, 246, 0.1);
+            --glass-border: rgba(139, 92, 246, 0.2);
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            background: var(--bg-dark);
+            color: var(--text-main);
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            -webkit-font-smoothing: antialiased;
+            margin: 0;
+            padding: 0;
+        }
+
+        .bg-animated {
+            background:
+                radial-gradient(ellipse 80% 80% at 20% 50%, rgba(139, 92, 246, 0.06) 0%, transparent 50%),
+                radial-gradient(ellipse 60% 60% at 80% 20%, rgba(244, 114, 182, 0.04) 0%, transparent 50%),
+                radial-gradient(ellipse 70% 70% at 50% 80%, rgba(99, 102, 241, 0.04) 0%, transparent 50%),
+                linear-gradient(180deg, #0a0a0f 0%, #13111c 50%, #0d0b17 100%);
+        }
+
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+
+        .custom-scroll::-webkit-scrollbar { width: 4px; height: 4px; }
+        .custom-scroll::-webkit-scrollbar-track { background: transparent; }
+        .custom-scroll::-webkit-scrollbar-thumb { background: rgba(139, 92, 246, 0.3); border-radius: 10px; }
+        .custom-scroll::-webkit-scrollbar-thumb:hover { background: var(--primary); }
+
+        .glass-panel {
+            background: rgba(23, 23, 37, 0.6);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(139, 92, 246, 0.15);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+        }
+
+        .glass-card {
+            background: rgba(23, 23, 37, 0.4);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(139, 92, 246, 0.1);
+            transition: all 0.3s ease;
+        }
+        .glass-card:hover {
+            background: rgba(30, 27, 48, 0.7);
+            border-color: rgba(139, 92, 246, 0.3);
+            box-shadow: 0 4px 20px rgba(139, 92, 246, 0.1);
+            transform: translateY(-2px);
+        }
+
+        .nav-btn-active {
+            background: linear-gradient(135deg, rgba(139, 92, 246, 0.2), rgba(244, 114, 182, 0.15));
+            border: 1px solid rgba(139, 92, 246, 0.3);
+            color: #c4b5fd !important;
+        }
+
+        .ep-btn {
+            aspect-ratio: 1/1;
+            border-radius: 10px;
+            background: rgba(23, 23, 37, 0.5);
+            backdrop-filter: blur(8px);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s ease;
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+            border: 1px solid rgba(139, 92, 246, 0.12);
+        }
+        .ep-btn:hover {
+            background: rgba(30, 27, 48, 0.8);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 16px rgba(139, 92, 246, 0.2);
+            border-color: rgba(139, 92, 246, 0.35);
+        }
+        .ep-active {
+            background: linear-gradient(135deg, rgba(139, 92, 246, 0.5), rgba(244, 114, 182, 0.35)) !important;
+            color: white;
+            box-shadow: 0 4px 20px rgba(139, 92, 246, 0.4);
+            border-color: rgba(196, 181, 253, 0.5);
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(8px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .animate-fade { animation: fadeIn 0.35s ease-out forwards; }
+
+        @keyframes shimmer {
+            0% { background-position: -1000px 0; }
+            100% { background-position: 1000px 0; }
+        }
+        .skeleton {
+            background: rgba(23, 23, 37, 0.5);
+            background-image: linear-gradient(90deg, rgba(23, 23, 37, 0.5) 0px, rgba(139, 92, 246, 0.08) 40px, rgba(23, 23, 37, 0.5) 80px);
+            background-size: 1000px 100%;
+            animation: shimmer 2s infinite linear;
+            border-radius: 12px;
+        }
+
+        .dplayer-video-wrap { border-radius: 16px; overflow: hidden; }
+        .dplayer-controller { padding-bottom: 5px; }
+        .dplayer-theme { color: var(--primary) !important; }
+
+        .toast {
+            position: fixed;
+            bottom: 24px;
+            left: 50%;
+            transform: translateX(-50%) translateY(120px);
+            background: rgba(23, 23, 37, 0.95);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(139, 92, 246, 0.3);
+            color: white;
+            padding: 12px 24px;
+            border-radius: 50px;
+            z-index: 9999;
+            transition: transform 0.4s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+            font-size: 13px;
+            font-weight: 500;
+            pointer-events: none;
+        }
+        .toast.show { transform: translateX(-50%) translateY(0); }
+
+        .horizontal-scroll {
+            display: flex;
+            gap: 14px;
+            overflow-x: auto;
+            scroll-snap-type: x mandatory;
+            -webkit-overflow-scrolling: touch;
+            padding-bottom: 8px;
+        }
+        .horizontal-scroll > * {
+            scroll-snap-align: start;
+            flex-shrink: 0;
+        }
+
+        .continue-card { width: 200px; cursor: pointer; }
+        .continue-card .progress-bar { height: 3px; background: rgba(255,255,255,0.2); border-radius: 10px; }
+        .continue-card .progress-fill { height: 100%; background: var(--primary); border-radius: 10px; }
+
+        /* AI 聊天样式 */
+        .chat-msg-user {
+            background: linear-gradient(135deg, rgba(139, 92, 246, 0.35), rgba(244, 114, 182, 0.25));
+            border: 1px solid rgba(139, 92, 246, 0.3);
+            border-radius: 18px 18px 4px 18px;
+            color: #f0e6ff;
+            max-width: 85%;
+            align-self: flex-end;
+        }
+        .chat-msg-ai {
+            background: rgba(23, 23, 37, 0.55);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(139, 92, 246, 0.12);
+            border-radius: 18px 18px 18px 4px;
+            color: #e2e8f0;
+            max-width: 90%;
+            align-self: flex-start;
+        }
+        .chat-msg-ai p { margin: 0.4em 0; }
+        .chat-msg-ai p:first-child { margin-top: 0; }
+        .chat-msg-ai p:last-child { margin-bottom: 0; }
+        .chat-msg-ai code { background: rgba(139, 92, 246, 0.2); padding: 2px 6px; border-radius: 4px; font-size: 0.85em; font-family: monospace; }
+        .chat-msg-ai pre { background: rgba(10, 10, 18, 0.7); border: 1px solid rgba(139, 92, 246, 0.2); border-radius: 10px; padding: 12px 14px; overflow-x: auto; font-size: 0.82em; line-height: 1.5; margin: 0.6em 0; }
+        .chat-msg-ai pre code { background: transparent; padding: 0; }
+        .chat-msg-ai ul, .chat-msg-ai ol { padding-left: 1.4em; margin: 0.4em 0; }
+        .chat-msg-ai li { margin: 0.2em 0; }
+        .chat-msg-ai blockquote { border-left: 3px solid rgba(139, 92, 246, 0.5); padding-left: 12px; margin: 0.5em 0; color: #c4b5fd; font-style: italic; }
+        .chat-msg-ai strong { color: #c4b5fd; }
+        .chat-msg-ai a { color: #a78bfa; text-decoration: underline; }
+
+        .typing-cursor::after {
+            content: '▊';
+            animation: blink 0.8s infinite;
+            color: #c4b5fd;
+            margin-left: 1px;
+        }
+        @keyframes blink { 0%,100% { opacity: 1; } 50% { opacity: 0; } }
+
+        .quick-chip {
+            background: rgba(139, 92, 246, 0.1);
+            border: 1px solid rgba(139, 92, 246, 0.2);
+            border-radius: 20px;
+            padding: 8px 16px;
+            font-size: 12px;
+            cursor: pointer;
+            transition: all 0.25s;
+            color: #c4b5fd;
+            white-space: nowrap;
+            font-weight: 500;
+        }
+        .quick-chip:hover {
+            background: rgba(139, 92, 246, 0.25);
+            border-color: rgba(139, 92, 246, 0.45);
+            transform: translateY(-1px);
+            box-shadow: 0 4px 14px rgba(139, 92, 246, 0.2);
+        }
+    </style>
+</head>
+<body class="flex flex-col md:flex-row h-screen overflow-hidden bg-animated">
+
+    <!-- 侧边导航 -->
+    <nav class="md:w-20 lg:w-64 flex-shrink-0 flex flex-col justify-between 
+                fixed md:relative bottom-0 w-full md:h-full z-50 order-2 md:order-1 transition-all
+                glass-panel border-r border-purple-500/8">
+        <div class="p-4 hidden md:block border-b border-purple-500/8">
+            <h1 class="text-xl lg:text-2xl font-black italic cursor-pointer tracking-tighter"
+                onclick="App.route('home')"
+                style="background: linear-gradient(135deg, #a78bfa 0%, #f472b6 50%, #818cf8 100%); 
+                       -webkit-background-clip: text; -webkit-text-fill-color: transparent;">
+                <i class="fa-solid fa-star-of-david mr-2" style="color: #a78bfa; -webkit-text-fill-color: #a78bfa;"></i>
+                <span class="hidden lg:inline">XingYuan</span>
+            </h1>
+        </div>
+        
+        <div class="flex md:flex-col justify-around md:justify-start flex-1 p-2 md:p-4 gap-1 md:gap-2">
+            <button onclick="App.route('home')" class="nav-btn flex flex-col md:flex-row items-center gap-3 p-3 rounded-xl hover:bg-purple-500/8 transition text-gray-400 hover:text-purple-300 group w-full" data-target="home">
+                <i class="fa-solid fa-compass text-lg md:text-xl group-hover:scale-110 transition"></i>
+                <span class="text-[10px] md:text-sm font-bold hidden md:block">发现</span>
+            </button>
+            <button onclick="App.route('search')" class="nav-btn flex flex-col md:flex-row items-center gap-3 p-3 rounded-xl hover:bg-purple-500/8 transition text-gray-400 hover:text-purple-300 group w-full" data-target="search">
+                <i class="fa-solid fa-magnifying-glass text-lg md:text-xl group-hover:scale-110 transition"></i>
+                <span class="text-[10px] md:text-sm font-bold hidden md:block">搜索</span>
+            </button>
+            <button onclick="App.route('ai')" class="nav-btn flex flex-col md:flex-row items-center gap-3 p-3 rounded-xl hover:bg-purple-500/8 transition text-gray-400 hover:text-purple-300 group w-full" data-target="ai">
+                <i class="fa-solid fa-robot text-lg md:text-xl group-hover:scale-110 transition"></i>
+                <span class="text-[10px] md:text-sm font-bold hidden md:block">AI助手</span>
+            </button>
+            <button onclick="App.route('favorites')" class="nav-btn flex flex-col md:flex-row items-center gap-3 p-3 rounded-xl hover:bg-purple-500/8 transition text-gray-400 hover:text-purple-300 group w-full" data-target="favorites">
+                <i class="fa-solid fa-heart text-lg md:text-xl group-hover:scale-110 transition"></i>
+                <span class="text-[10px] md:text-sm font-bold hidden md:block">追番</span>
+            </button>
+            <button onclick="App.route('history')" class="nav-btn flex flex-col md:flex-row items-center gap-3 p-3 rounded-xl hover:bg-purple-500/8 transition text-gray-400 hover:text-purple-300 group w-full" data-target="history">
+                <i class="fa-solid fa-clock-rotate-left text-lg md:text-xl group-hover:scale-110 transition"></i>
+                <span class="text-[10px] md:text-sm font-bold hidden md:block">历史</span>
+            </button>
+        </div>
+
+        <div class="p-4 hidden md:block text-center text-xs text-purple-400/40 border-t border-purple-500/8">
+            <p>XingYuan-Anime</p>
+            <p class="mt-1">Ver 2026.5</p>
+        </div>
+    </nav>
+
+    <!-- 主内容区 -->
+    <main class="flex-1 h-full overflow-y-auto custom-scroll relative order-1 md:order-2 pb-20 md:pb-0">
+        <div class="relative z-10 p-4 md:p-6 max-w-7xl mx-auto min-h-full">
+            
+            <!-- 顶部栏 -->
+            <header class="flex justify-between items-center mb-6 animate-fade sticky top-0 z-20 py-2 bg-[#0a0a0f]/80 backdrop-blur-md">
+                <div class="flex items-center gap-3">
+                    <button id="btn-back" class="hidden bg-purple-500/15 hover:bg-purple-500/25 text-purple-300 w-9 h-9 rounded-full flex items-center justify-center backdrop-blur transition" onclick="App.route('home')">
+                        <i class="fa-solid fa-house text-sm"></i>
+                    </button>
+                    <h2 id="page-title" class="text-xl md:text-2xl font-bold text-white tracking-wide">发现</h2>
+                </div>
+                <div class="hidden md:flex glass-panel rounded-full px-2 py-1 shadow-xl w-56 focus-within:w-80 transition-all duration-300">
+                    <input id="quick-search" type="text" placeholder="搜索番剧..." class="bg-transparent border-none outline-none text-sm px-4 py-2 w-full text-white placeholder-purple-400/40" onkeypress="if(event.key==='Enter') App.quickSearch()">
+                    <button onclick="App.quickSearch()" class="bg-purple-600 hover:bg-purple-500 w-8 h-8 rounded-full flex items-center justify-center text-white transition flex-shrink-0">
+                        <i class="fa-solid fa-search text-xs"></i>
+                    </button>
+                </div>
+            </header>
+
+            <div id="view-container" class="relative">
+                
+                <!-- 首页 -->
+                <section id="view-home" class="view-section space-y-8">
+                    <div class="md:hidden flex glass-panel rounded-full px-2 py-1 mb-2">
+                        <input id="mobile-search" type="text" placeholder="搜索番剧..." class="bg-transparent outline-none px-4 py-2 w-full text-sm">
+                        <button onclick="App.quickSearch(true)" class="bg-purple-600 px-4 rounded-full text-sm font-bold flex-shrink-0">搜索</button>
+                    </div>
+                    <div id="continue-watching-section" class="hidden">
+                        <div class="flex items-center justify-between mb-3">
+                            <h3 class="text-lg font-bold flex items-center gap-2"><i class="fa-solid fa-play text-purple-400 text-sm"></i> 继续观看</h3>
+                        </div>
+                        <div id="continue-watching-list" class="horizontal-scroll no-scrollbar"></div>
+                    </div>
+                    <div>
+                        <div class="flex items-center justify-between mb-3">
+                            <h3 class="text-lg font-bold flex items-center gap-2"><i class="fa-solid fa-calendar-star text-purple-400 text-sm"></i> 今日放送</h3>
+                            <span class="text-xs text-purple-400/50" id="weekday-label"></span>
+                        </div>
+                        <div id="weekly-grid" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 xl:grid-cols-6 gap-4"></div>
+                    </div>
+                    <div>
+                        <div class="flex items-center justify-between mb-3">
+                            <h3 class="text-lg font-bold flex items-center gap-2"><i class="fa-solid fa-fire text-purple-400 text-sm"></i> 热门推荐</h3>
+                        </div>
+                        <div id="popular-grid" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 xl:grid-cols-6 gap-4"></div>
+                    </div>
+                </section>
+
+                <!-- 搜索页 -->
+                <section id="view-search" class="view-section hidden">
+                    <div class="md:hidden flex glass-panel rounded-full px-2 py-1 mb-6">
+                        <input id="mobile-search2" type="text" placeholder="输入番剧名称..." class="bg-transparent outline-none px-4 py-2 w-full text-sm">
+                        <button onclick="App.quickSearch(true)" class="bg-purple-600 px-4 rounded-full text-sm font-bold flex-shrink-0">搜索</button>
+                    </div>
+                    <div id="search-results" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4"></div>
+                </section>
+
+                <!-- 播放页 -->
+                <section id="view-player" class="view-section hidden">
+                    <div class="grid grid-cols-1 xl:grid-cols-3 gap-6">
+                        <div class="xl:col-span-2 space-y-4">
+                            <div class="bg-black rounded-2xl overflow-hidden shadow-2xl aspect-video border border-purple-500/8 relative">
+                                <div id="dplayer"></div>
+                            </div>
+                            <div class="glass-panel p-5 rounded-2xl animate-fade">
+                                <div class="flex flex-col sm:flex-row justify-between items-start sm:items-end gap-4 border-b border-purple-500/8 pb-4 mb-4">
+                                    <div class="flex-1 min-w-0">
+                                        <div class="flex items-center gap-2 mb-2">
+                                            <span id="det-date" class="bg-purple-500/15 text-purple-400 text-xs px-2 py-0.5 rounded font-bold border border-purple-500/20">2026</span>
+                                        </div>
+                                        <h2 id="det-title" class="text-xl md:text-2xl font-bold truncate">加载中...</h2>
+                                        <p id="det-origin-title" class="text-xs text-purple-300/40 mt-1 italic truncate"></p>
+                                    </div>
+                                    <div class="flex items-center gap-3 flex-shrink-0">
+                                        <div class="text-center">
+                                            <span class="text-[10px] text-purple-400/40 uppercase font-bold block">评分</span>
+                                            <span id="det-score" class="text-2xl font-bold text-purple-400 italic">0.0</span>
+                                        </div>
+                                        <button id="btn-fav" onclick="App.toggleFavorite()" class="w-10 h-10 rounded-full bg-purple-500/10 hover:bg-purple-500/20 text-purple-400 hover:text-pink-400 flex items-center justify-center transition text-lg border border-transparent hover:border-purple-500/30">
+                                            <i class="fa-regular fa-heart"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                                <p id="det-summary" class="text-xs text-gray-400 leading-relaxed max-h-24 overflow-y-auto custom-scroll pr-2"></p>
+                                <div id="det-tags" class="mt-3 flex flex-wrap gap-2"></div>
+                            </div>
+                        </div>
+                        <div class="glass-panel rounded-2xl flex flex-col h-[500px] xl:h-auto animate-fade">
+                            <div class="p-4 border-b border-purple-500/8 flex items-center justify-between">
+                                <h3 class="font-bold text-sm flex items-center gap-2"><i class="fa-solid fa-list-ul text-purple-400"></i> 选集</h3>
+                                <button onclick="App.reverseEps()" class="text-xs bg-purple-500/10 hover:bg-purple-500/20 px-3 py-1 rounded-lg transition font-medium flex items-center gap-1 text-purple-300">
+                                    <i class="fa-solid fa-sort"></i> 排序
+                                </button>
+                            </div>
+                            <div class="px-4 pt-3">
+                                <div id="ep-tabs" class="flex gap-2 overflow-x-auto no-scrollbar pb-2 text-xs"></div>
+                            </div>
+                            <div class="p-4 flex-1 overflow-y-auto custom-scroll relative">
+                                <div id="ep-grid" class="grid grid-cols-5 sm:grid-cols-7 xl:grid-cols-5 gap-2"></div>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- AI 助手页（无设置按钮） -->
+                <section id="view-ai" class="view-section hidden h-full">
+                    <div class="flex flex-col h-full" style="height: calc(100vh - 160px); max-height: calc(100vh - 160px);">
+                        <div class="flex items-center justify-between mb-3 flex-shrink-0">
+                            <div class="flex items-center gap-2">
+                                <span class="bg-purple-500/15 text-purple-400 text-xs px-3 py-1 rounded-full border border-purple-500/20 font-medium">
+                                    <i class="fa-solid fa-robot mr-1"></i>星渊酱
+                                </span>
+                                <span id="ai-model-badge" class="text-[10px] text-purple-400/40">gpt-4o-mini</span>
+                            </div>
+                            <button onclick="App.clearChat()" class="text-xs text-pink-400/60 hover:text-pink-400 border border-pink-500/15 px-3 py-1.5 rounded-lg transition flex items-center gap-1">
+                                <i class="fa-solid fa-eraser"></i> 清空
+                            </button>
+                        </div>
+
+                        <div id="chat-messages" class="flex-1 overflow-y-auto custom-scroll space-y-4 pr-2 pb-2">
+                            <div id="chat-welcome" class="flex flex-col items-center justify-center py-8 text-center">
+                                <div class="w-20 h-20 rounded-full bg-purple-500/10 border-2 border-purple-500/20 flex items-center justify-center mb-4">
+                                    <i class="fa-solid fa-robot text-3xl text-purple-400"></i>
+                                </div>
+                                <h3 class="text-lg font-bold text-white mb-1">星渊酱 · AI动漫助手</h3>
+                                <p class="text-xs text-purple-400/40 mb-6 max-w-sm">和我聊聊动漫吧！推荐、分析、吐槽，我都在行~</p>
+                                <div class="flex flex-wrap gap-2 justify-center max-w-md px-2" id="quick-chips">
+                                    <span class="quick-chip" onclick="App.sendQuickQuestion('推荐几部好看的动漫吧')">🎬 推荐几部好看的动漫</span>
+                                    <span class="quick-chip" onclick="App.sendQuickQuestion('最近有什么热门新番？')">🔥 最近有什么热门新番</span>
+                                    <span class="quick-chip" onclick="App.sendQuickQuestion('分析一下《进击的巨人》')">📝 分析《进击的巨人》</span>
+                                    <span class="quick-chip" onclick="App.sendQuickQuestion('什么是二次元文化？')">💬 什么是二次元文化</span>
+                                    <span class="quick-chip" onclick="App.sendQuickQuestion('推荐一些好看的动漫电影')">🎨 推荐动漫电影</span>
+                                    <span class="quick-chip" onclick="App.sendQuickQuestion('动漫和动画有什么区别？')">🤔 动漫vs动画区别</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="flex-shrink-0 pt-2 pb-2 md:pb-0">
+                            <div class="glass-panel rounded-2xl px-3 py-2 flex items-end gap-2">
+                                <textarea id="ai-input" rows="1" placeholder="和星渊酱聊聊动漫..."
+                                    class="flex-1 bg-transparent border-none outline-none text-sm text-white placeholder-purple-400/40 resize-none py-2 px-1 max-h-32 custom-scroll"
+                                    onkeydown="App.handleChatKeydown(event)" oninput="App.autoResizeTextarea(this)"></textarea>
+                                <button id="btn-send" onclick="App.sendMessage()" class="bg-purple-600 hover:bg-purple-500 w-10 h-10 rounded-full flex items-center justify-center text-white transition flex-shrink-0">
+                                    <i class="fa-solid fa-paper-plane text-sm"></i>
+                                </button>
+                                <button id="btn-stop" onclick="App.stopGenerating()" class="hidden bg-pink-500/20 hover:bg-pink-500/30 w-10 h-10 rounded-full flex items-center justify-center text-pink-400 transition flex-shrink-0 border border-pink-500/30">
+                                    <i class="fa-solid fa-stop text-sm"></i>
+                                </button>
+                            </div>
+                            <p class="text-[10px] text-purple-400/25 text-center mt-1.5">AI助手由 OpenAI 兼容协议驱动 · 内容仅供参考</p>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- 追番页 -->
+                <section id="view-favorites" class="view-section hidden">
+                    <div class="flex glass-panel rounded-full px-2 py-1 mb-6 max-w-md mx-auto">
+                        <input id="fav-search" type="text" placeholder="搜索收藏的番剧..." class="bg-transparent outline-none px-4 py-2 w-full text-sm" oninput="App.filterFavorites()">
+                        <button class="bg-purple-600 w-9 h-9 rounded-full flex items-center justify-center text-white flex-shrink-0">
+                            <i class="fa-solid fa-search text-xs"></i>
+                        </button>
+                    </div>
+                    <div id="favorites-grid" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-4"></div>
+                    <div id="favorites-empty" class="hidden text-center py-16 text-purple-400/30 flex flex-col items-center">
+                        <i class="fa-regular fa-folder-open text-5xl mb-3 opacity-50"></i>
+                        <p class="text-sm">暂无收藏番剧</p>
+                    </div>
+                </section>
+
+                <!-- 历史页 -->
+                <section id="view-history" class="view-section hidden">
+                    <div class="flex justify-end mb-4">
+                        <button onclick="StorageSys.clearHistory(); App.renderHistory();" class="text-xs text-pink-400 hover:text-pink-300 border border-pink-500/20 px-3 py-1 rounded-lg transition">清空历史</button>
+                    </div>
+                    <div id="history-list" class="space-y-3"></div>
+                </section>
+
+            </div>
+        </div>
+    </main>
+
+    <div id="toast" class="toast">系统提示</div>
+
+    <script>
+        const AppState = {
+            currentView: 'home',
+            viewHistory: [],
+            currentAnime: null,
+            currentEps: [],
+            sortAsc: true,
+            epRangeIndex: 0,
+            currentEpIndex: 0,
+            dplayerInstance: null,
+            danmakuIdMap: {},
+            allFavs: [],
+            // AI 聊天状态
+            chatMessages: [],
+            isGenerating: false,
+            abortController: null,
+            // 硬编码的 AI 配置
+            aiSettings: {
+                apiKey: 'tp-cl442e70yswkfuxyig8wi7d4qth2ex6xtup19ipkrdgxrydl',
+                model: 'mimo-v2.5-pro',
+                baseUrl: 'https://token-plan-cn.xiaomimimo.com/v1'
+            }
+        };
+
+        const CORS_PROXY = '';
+
+        const CONFIG = {
+            API_BGM: "https://api.bgm.tv",
+            API_VOD: "https://cj.lziapi.com/api.php/provide/vod/",
+            API_DAN: "https://token-plan-cn.xiaomimimo.com/v1"
+        };
+
+        const AI_SYSTEM_PROMPT = `你是一个热爱动漫的AI助手，名叫"星渊酱"。你熟悉各种动漫作品、角色、剧情，也了解动漫文化和行业动态。你可以用热情、专业的方式与用户讨论动漫相关话题。如果用户问的问题与动漫无关，你也可以友好地回答，但会适时引导话题回到动漫上。你说话风格活泼可爱，偶尔会使用一些动漫梗。回答时适当使用emoji来增加趣味性。`;
+
+        const Utils = {
+            showToast: (msg, duration = 3000) => {
+                const el = document.getElementById('toast');
+                el.innerText = msg;
+                el.classList.add('show');
+                setTimeout(() => el.classList.remove('show'), duration);
+            },
+            formatTime: (seconds) => {
+                const h = Math.floor(seconds / 3600), m = Math.floor((seconds % 3600) / 60), s = Math.floor(seconds % 60);
+                return h > 0 ? `${h}:${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}` : `${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
+            },
+            extractEpNum: (name) => {
+                let match = name.match(/第\s*(\d+(\.\d+)?)\s*[集話话]/i);
+                if (match) return match[1];
+                match = name.match(/[Ee][Pp]\.?\s*(\d+)/i);
+                if (match) return match[1];
+                match = name.match(/(?:^|\D)(\d{1,3})(?:\D|$)/);
+                if (match) return match[1];
+                return name;
+            },
+            generateSkeleton: (count, type = 'card') => {
+                if (type === 'card') {
+                    return Array(count).fill(0).map(() => `<div class="aspect-[3/4] skeleton"></div>`).join('');
+                }
+                if (type === 'horizontal') {
+                    return Array(count).fill(0).map(() => `<div class="w-[200px] aspect-[16/10] skeleton rounded-xl flex-shrink-0"></div>`).join('');
+                }
+                return '';
+            },
+            proxyFetch: async (url, config = {}) => {
+                const finalUrl = CORS_PROXY ? `${CORS_PROXY}${encodeURIComponent(url)}` : url;
+                return axios({ ...config, url: finalUrl });
+            }
+        };
+
+        const StorageSys = {
+            getFavs: () => JSON.parse(localStorage.getItem('xingyuan_favs') || '{}'),
+            toggleFav: (anime) => {
+                let favs = StorageSys.getFavs();
+                if (favs[anime.id]) {
+                    delete favs[anime.id];
+                    Utils.showToast('已取消收藏');
+                } else {
+                    favs[anime.id] = anime;
+                    Utils.showToast('已加入追番 💜');
+                }
+                localStorage.setItem('xingyuan_favs', JSON.stringify(favs));
+                return !!favs[anime.id];
+            },
+            isFav: (id) => !!StorageSys.getFavs()[id],
+            getHistory: () => JSON.parse(localStorage.getItem('xingyuan_history') || '{}'),
+            saveHistory: (animeId, animeName, epIndex, epName, time) => {
+                let hist = StorageSys.getHistory();
+                hist[animeId] = { animeId, animeName, epIndex, epName, time, lastUpdate: Date.now() };
+                localStorage.setItem('xingyuan_history', JSON.stringify(hist));
+            },
+            clearHistory: () => {
+                localStorage.removeItem('xingyuan_history');
+                Utils.showToast('历史记录已清空');
+            },
+            // 聊天记录本地存储
+            getChatMessages: () => JSON.parse(localStorage.getItem('xingyuan_chat_messages') || '[]'),
+            saveChatMessages: (messages) => {
+                const trimmed = messages.slice(-100);
+                localStorage.setItem('xingyuan_chat_messages', JSON.stringify(trimmed));
+            },
+            clearChatMessages: () => {
+                localStorage.removeItem('xingyuan_chat_messages');
+            }
+        };
+
+        const APIService = {
+            getCalendar: async () => {
+                const { data } = await axios.get(`${CONFIG.API_BGM}/calendar`);
+                const todayIndex = (new Date().getDay() + 6) % 7;
+                return data[todayIndex]?.items || [];
+            },
+            getMultiDayCalendar: async () => {
+                const { data } = await axios.get(`${CONFIG.API_BGM}/calendar`);
+                let allItems = [];
+                for (let i = 0; i < 7; i++) {
+                    const items = data[i]?.items || [];
+                    allItems.push(...items);
+                }
+                return allItems
+                    .filter(item => item.rating?.score)
+                    .sort((a, b) => (b.rating?.score || 0) - (a.rating?.score || 0))
+                    .slice(0, 12);
+            },
+            searchBgm: async (keyword) => {
+                const { data } = await axios.post(`${CONFIG.API_BGM}/v0/search/subjects`, { keyword, filter: { type: [2] } });
+                return data.data;
+            },
+            getBgmDetail: async (id) => {
+                const { data } = await axios.get(`${CONFIG.API_BGM}/v0/subjects/${id}`);
+                return data;
+            },
+            getVodSource: async (name) => {
+                const attempts = [];
+                let cleanName = name.replace(/\s*第[一二三四五六七八九十\d]+季\s*/g, '').replace(/\s*Season\s*\d+/gi, '').replace(/[\(\[（【].*?[\)\]）】]/g, '').trim();
+                if (cleanName && cleanName !== name) attempts.push(cleanName);
+                attempts.push(name);
+                const shortName = name.split(/[\s\/]+/).slice(0, 2).join(' ');
+                if (shortName !== name && shortName.length > 2) attempts.push(shortName);
+                const chineseOnly = name.match(/[\u4e00-\u9fff]+/g);
+                if (chineseOnly) {
+                    const shortChinese = chineseOnly.join('').slice(0, 4);
+                    if (shortChinese.length >= 2 && shortChinese !== name) attempts.push(shortChinese);
+                }
+                const uniqueAttempts = [...new Set(attempts)];
+                for (const attemptName of uniqueAttempts) {
+                    try {
+                        const { data } = await Utils.proxyFetch(`${CONFIG.API_VOD}?ac=detail&wd=${encodeURIComponent(attemptName)}`);
+                        if (data.list && data.list.length > 0) {
+                            return APIService.parseVodData(data);
+                        }
+                    } catch (e) { continue; }
+                }
+                throw new Error("Resource not found");
+            },
+            parseVodData: (data) => {
+                let eps = [];
+                const vodPlayUrl = data.list[0].vod_play_url || '';
+                const items = vodPlayUrl.includes('#') ? vodPlayUrl.split('#') : vodPlayUrl.includes('\n') ? vodPlayUrl.split('\n') : [vodPlayUrl];
+                items.forEach(item => {
+                    if (!item.trim()) return;
+                    const parts = item.split('$');
+                    if (parts.length >= 2) {
+                        const url = parts[1].trim();
+                        if (url && (url.includes('m3u8') || url.includes('.mp4') || url.startsWith('http'))) {
+                            const finalUrl = CORS_PROXY ? `${CORS_PROXY}${encodeURIComponent(url)}` : url;
+                            eps.push({ name: parts[0].trim(), url: finalUrl });
+                        }
+                    }
+                });
+                return eps;
+            },
+            getDanmakuMapping: async (animeName) => {
+                try {
+                    const { data } = await Utils.proxyFetch(`${CONFIG.API_DAN}/search/episodes?anime=${encodeURIComponent(animeName)}`);
+                    if (data.animes && data.animes.length > 0) {
+                        let mapping = {};
+                        data.animes[0].episodes.forEach(ep => {
+                            const num = Utils.extractEpNum(ep.episodeTitle);
+                            mapping[num] = ep.episodeId;
+                        });
+                        return mapping;
+                    }
+                } catch (e) {}
+                return {};
+            },
+            fetchDplayerDanmaku: async (episodeId) => {
+                try {
+                    const { data } = await Utils.proxyFetch(`${CONFIG.API_DAN}/comment/${episodeId}?withRelated=true`);
+                    return data.comments.map(c => {
+                        const p = c.p.split(',');
+                        return [parseFloat(p[0]), parseInt(p[1]) === 1 ? 0 : 1, parseInt(p[2]), p[3], c.m];
+                    });
+                } catch (e) { return []; }
+            },
+            // AI 聊天 API（流式）
+            chatStream: async (messages, apiKey, model, baseUrl, signal) => {
+                const url = `${baseUrl}/chat/completions`;
+                const allMessages = [
+                    { role: 'system', content: AI_SYSTEM_PROMPT },
+                    ...messages
+                ];
+                const response = await fetch(url, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${apiKey}`
+                    },
+                    body: JSON.stringify({
+                        model: model,
+                        messages: allMessages,
+                        stream: true,
+                        temperature: 0.8,
+                        max_tokens: 2048
+                    }),
+                    signal: signal
+                });
+                if (!response.ok) {
+                    const errBody = await response.text();
+                    let errMsg = `请求失败 (${response.status})`;
+                    try { const errJson = JSON.parse(errBody); errMsg = errJson.error?.message || errMsg; } catch (e) {}
+                    throw new Error(errMsg);
+                }
+                return response.body.getReader();
+            }
+        };
+
+        const App = {
+            init: () => {
+                // 加载聊天历史
+                AppState.chatMessages = StorageSys.getChatMessages();
+                App.route('home');
+                setInterval(() => {
+                    if (AppState.dplayerInstance && AppState.currentAnime && 
+                        AppState.dplayerInstance.video && !AppState.dplayerInstance.video.paused) {
+                        StorageSys.saveHistory(
+                            AppState.currentAnime.id,
+                            AppState.currentAnime.name_cn || AppState.currentAnime.name,
+                            AppState.currentEpIndex,
+                            AppState.currentEps[AppState.currentEpIndex]?.name || '',
+                            AppState.dplayerInstance.video.currentTime
+                        );
+                    }
+                }, 5000);
+            },
+
+            route: (viewName) => {
+                if (AppState.isGenerating && viewName !== 'ai') App.stopGenerating(true);
+                if (viewName !== 'player') AppState.viewHistory.push(viewName);
+                AppState.currentView = viewName;
+
+                document.querySelectorAll('.view-section').forEach(el => el.classList.add('hidden'));
+                const targetSection = document.getElementById(`view-${viewName}`);
+                if (targetSection) targetSection.classList.remove('hidden');
+
+                document.querySelectorAll('.nav-btn').forEach(btn => {
+                    btn.classList.remove('nav-btn-active', 'text-purple-300');
+                    btn.classList.add('text-gray-400');
+                });
+                const targetBtn = document.querySelector(`.nav-btn[data-target="${viewName}"]`);
+                if (targetBtn) {
+                    targetBtn.classList.add('nav-btn-active', 'text-purple-300');
+                    targetBtn.classList.remove('text-gray-400');
+                }
+
+                const backBtn = document.getElementById('btn-back');
+                if (backBtn) backBtn.style.display = (viewName === 'home') ? 'none' : 'flex';
+
+                const titleMap = { home: '发现', search: '搜索', player: '播放', ai: 'AI助手', favorites: '我的追番', history: '观看历史' };
+                document.getElementById('page-title').innerText = titleMap[viewName] || '';
+
+                if (viewName === 'home') App.renderHome();
+                if (viewName === 'favorites') App.renderFavorites();
+                if (viewName === 'history') App.renderHistory();
+                if (viewName === 'ai') App.renderAI();
+            },
+
+            goBack: () => {
+                if(AppState.dplayerInstance && AppState.currentView === 'player') AppState.dplayerInstance.pause();
+                AppState.viewHistory.pop();
+                const prev = AppState.viewHistory.pop() || 'home';
+                App.route(prev);
+            },
+
+            quickSearch: async (isMobile = false) => {
+                const inputId = isMobile ? (document.getElementById('mobile-search2') ? 'mobile-search2' : 'mobile-search') : 'quick-search';
+                const kw = document.getElementById(inputId).value.trim();
+                if (!kw) return Utils.showToast('请输入番剧名称');
+                App.route('search');
+                document.getElementById('search-results').innerHTML = Utils.generateSkeleton(6, 'card');
+                try {
+                    const results = await APIService.searchBgm(kw);
+                    if (!results || results.length === 0) {
+                        document.getElementById('search-results').innerHTML = `<p class="col-span-full text-purple-400/40 py-10 text-center text-sm">✨ 没有找到相关番剧</p>`;
+                        return;
+                    }
+                    document.getElementById('search-results').innerHTML = results.map(item => `
+                        <div onclick="App.playAnime(${item.id})" class="glass-card p-4 rounded-xl flex gap-3 cursor-pointer transition group">
+                            <img src="${item.images?.small || ''}" onerror="this.style.display='none'" class="w-16 h-22 object-cover rounded-lg shadow group-hover:scale-105 transition flex-shrink-0" style="aspect-ratio:2/3;">
+                            <div class="flex-1 overflow-hidden flex flex-col justify-between min-w-0">
+                                <div>
+                                    <h4 class="text-sm font-bold text-white truncate">${item.name_cn || item.name}</h4>
+                                    <p class="text-xs text-purple-300/40 mt-0.5 truncate">${item.name}</p>
+                                </div>
+                                <div class="flex items-center gap-2 mt-1">
+                                    <span class="text-xs bg-purple-500/15 text-purple-400 px-2 py-0.5 rounded">${item.date || '未知'}</span>
+                                </div>
+                            </div>
+                        </div>
+                    `).join('');
+                } catch (e) {
+                    Utils.showToast('搜索失败，请稍后再试');
+                    document.getElementById('search-results').innerHTML = '';
+                }
+            },
+
+            renderHome: async () => {
+                const weeklyGrid = document.getElementById('weekly-grid');
+                const popularGrid = document.getElementById('popular-grid');
+                const continueSection = document.getElementById('continue-watching-section');
+                const continueList = document.getElementById('continue-watching-list');
+                const weekdayLabel = document.getElementById('weekday-label');
+                const weekdays = ['日曜日', '月曜日', '火曜日', '水曜日', '木曜日', '金曜日', '土曜日'];
+                weekdayLabel.textContent = weekdays[new Date().getDay()];
+                const hist = Object.values(StorageSys.getHistory()).sort((a,b) => b.lastUpdate - a.lastUpdate).slice(0, 8);
+                if (hist.length > 0) {
+                    continueSection.classList.remove('hidden');
+                    continueList.innerHTML = hist.map(item => {
+                        const progressPercent = item.time > 0 ? Math.min(100, Math.round((item.time / 1500) * 100)) : 0;
+                        return `
+                        <div onclick="App.playAnime(${item.animeId}, ${item.epIndex}, ${item.time})" class="continue-card glass-card rounded-xl overflow-hidden group">
+                            <div class="aspect-[16/10] bg-gray-800 flex items-center justify-center relative">
+                                <i class="fa-solid fa-circle-play text-3xl text-purple-400/40 group-hover:text-purple-400 group-hover:scale-110 transition"></i>
+                                <div class="absolute bottom-0 left-0 right-0 px-3 pb-2">
+                                    <div class="progress-bar"><div class="progress-fill" style="width:${progressPercent}%"></div></div>
+                                </div>
+                            </div>
+                            <div class="p-3">
+                                <p class="text-xs font-bold text-white truncate">${item.animeName}</p>
+                                <p class="text-[10px] text-purple-400/40 mt-0.5">${item.epName} · ${Utils.formatTime(item.time)}</p>
+                            </div>
+                        </div>`;
+                    }).join('');
+                } else {
+                    continueSection.classList.add('hidden');
+                }
+                if (weeklyGrid.children.length === 0 || weeklyGrid.innerHTML.includes('skeleton')) {
+                    weeklyGrid.innerHTML = Utils.generateSkeleton(6, 'card');
+                    try {
+                        const items = await APIService.getCalendar();
+                        weeklyGrid.innerHTML = items.slice(0, 12).map(item => `
+                            <div onclick="App.playAnime(${item.id})" class="cursor-pointer group animate-fade">
+                                <div class="aspect-[3/4] rounded-xl overflow-hidden glass-card relative shadow-lg">
+                                    <img src="${item.images?.large || item.images?.common || ''}" onerror="this.style.display='none'" class="w-full h-full object-cover group-hover:scale-110 transition duration-500">
+                                    <div class="absolute inset-0 bg-gradient-to-t from-[#0a0a0f] via-transparent to-transparent flex flex-col justify-end p-3">
+                                        <span class="text-purple-400 text-[10px] font-bold mb-0.5">⭐ ${item.rating?.score || 'N/A'}</span>
+                                        <h3 class="text-xs font-bold text-white line-clamp-2">${item.name_cn || item.name}</h3>
+                                    </div>
+                                </div>
+                            </div>
+                        `).join('');
+                    } catch (e) {
+                        weeklyGrid.innerHTML = `<div class="col-span-full py-8 text-center text-pink-400 text-sm">加载失败，请刷新重试</div>`;
+                    }
+                }
+                if (popularGrid.children.length === 0 || popularGrid.innerHTML.includes('skeleton')) {
+                    popularGrid.innerHTML = Utils.generateSkeleton(6, 'card');
+                    try {
+                        const items = await APIService.getMultiDayCalendar();
+                        popularGrid.innerHTML = items.map(item => `
+                            <div onclick="App.playAnime(${item.id})" class="cursor-pointer group animate-fade" style="animation-delay:${Math.random()*0.3}s">
+                                <div class="aspect-[3/4] rounded-xl overflow-hidden glass-card relative shadow-lg">
+                                    <img src="${item.images?.large || item.images?.common || ''}" onerror="this.style.display='none'" class="w-full h-full object-cover group-hover:scale-110 transition duration-500">
+                                    <div class="absolute inset-0 bg-gradient-to-t from-[#0a0a0f] via-transparent to-transparent flex flex-col justify-end p-3">
+                                        <span class="text-orange-400 text-[10px] font-bold mb-0.5">🔥 ${item.rating?.score || 'N/A'}</span>
+                                        <h3 class="text-xs font-bold text-white line-clamp-2">${item.name_cn || item.name}</h3>
+                                    </div>
+                                </div>
+                            </div>
+                        `).join('');
+                    } catch (e) {
+                        popularGrid.innerHTML = `<div class="col-span-full py-8 text-center text-pink-400 text-sm">加载失败</div>`;
+                    }
+                }
+            },
+
+            renderFavorites: () => {
+                const favs = Object.values(StorageSys.getFavs());
+                AppState.allFavs = favs;
+                App.displayFavs(favs);
+            },
+
+            displayFavs: (favs) => {
+                const grid = document.getElementById('favorites-grid');
+                const empty = document.getElementById('favorites-empty');
+                if (favs.length === 0) {
+                    grid.innerHTML = '';
+                    empty.classList.remove('hidden');
+                    return;
+                }
+                empty.classList.add('hidden');
+                grid.innerHTML = favs.map(item => `
+                    <div onclick="App.playAnime(${item.id})" class="cursor-pointer group animate-fade">
+                        <div class="aspect-[3/4] rounded-xl overflow-hidden relative glass-card">
+                            <img src="${item.images?.large || item.images?.common || ''}" class="w-full h-full object-cover group-hover:scale-105 transition" onerror="this.style.display='none'">
+                            <div class="absolute inset-0 bg-gradient-to-t from-[#0a0a0f]/90 to-transparent flex items-end p-3">
+                                <h3 class="text-xs font-bold truncate">${item.name_cn || item.name}</h3>
+                            </div>
+                        </div>
+                    </div>
+                `).join('');
+            },
+
+            filterFavorites: () => {
+                const kw = document.getElementById('fav-search').value.trim().toLowerCase();
+                if (!kw) { App.displayFavs(AppState.allFavs); return; }
+                const filtered = AppState.allFavs.filter(item => {
+                    const cn = (item.name_cn || '').toLowerCase();
+                    const name = (item.name || '').toLowerCase();
+                    return cn.includes(kw) || name.includes(kw);
+                });
+                App.displayFavs(filtered);
+            },
+
+            renderHistory: () => {
+                const hist = Object.values(StorageSys.getHistory()).sort((a,b) => b.lastUpdate - a.lastUpdate);
+                const list = document.getElementById('history-list');
+                if (hist.length === 0) {
+                    list.innerHTML = `<div class="text-center py-16 text-purple-400/30"><i class="fa-solid fa-ghost text-4xl mb-3 opacity-50 block"></i><p class="text-sm">暂无观看记录</p></div>`;
+                    return;
+                }
+                list.innerHTML = hist.map(item => `
+                    <div onclick="App.playAnime(${item.animeId}, ${item.epIndex}, ${item.time})" class="glass-card p-4 rounded-xl flex justify-between items-center cursor-pointer transition border border-transparent group animate-fade">
+                        <div class="min-w-0 flex-1">
+                            <h4 class="font-bold text-white text-sm group-hover:text-purple-400 transition truncate">${item.animeName}</h4>
+                            <p class="text-xs text-purple-300/40 mt-1">${item.epName} · 进度 ${Utils.formatTime(item.time)}</p>
+                        </div>
+                        <i class="fa-regular fa-circle-play text-xl text-purple-400/30 group-hover:text-purple-400 transition ml-3 flex-shrink-0"></i>
+                    </div>
+                `).join('');
+            },
+
+            // ========== AI 聊天方法 ==========
+            renderAI: () => {
+                const messagesContainer = document.getElementById('chat-messages');
+                const welcome = document.getElementById('chat-welcome');
+                if (AppState.chatMessages.length === 0) {
+                    welcome.classList.remove('hidden');
+                    messagesContainer.querySelectorAll('.chat-msg-user, .chat-msg-ai').forEach(el => el.remove());
+                } else {
+                    welcome.classList.add('hidden');
+                    messagesContainer.querySelectorAll('.chat-msg-user, .chat-msg-ai').forEach(el => el.remove());
+                    AppState.chatMessages.forEach((msg, index) => {
+                        App.appendMessageBubble(msg.role, msg.content, index === AppState.chatMessages.length - 1 && msg.role === 'assistant' && AppState.isGenerating);
+                    });
+                }
+                App.scrollChatToBottom();
+                App.updateSendButton();
+            },
+
+            appendMessageBubble: (role, content, isStreaming = false) => {
+                const container = document.getElementById('chat-messages');
+                document.getElementById('chat-welcome').classList.add('hidden');
+                const bubble = document.createElement('div');
+                bubble.className = role === 'user' ? 'chat-msg-user px-4 py-3 animate-fade ml-auto' : `chat-msg-ai px-4 py-3 animate-fade mr-auto${isStreaming ? ' typing-cursor' : ''}`;
+                bubble.setAttribute('data-role', role);
+                if (role === 'user') {
+                    bubble.textContent = content;
+                } else {
+                    try { bubble.innerHTML = marked.parse(content) || ''; } catch (e) { bubble.textContent = content; }
+                }
+                container.appendChild(bubble);
+                App.scrollChatToBottom();
+                return bubble;
+            },
+
+            getLastAiBubble: () => {
+                const bubbles = document.getElementById('chat-messages').querySelectorAll('.chat-msg-ai');
+                return bubbles.length > 0 ? bubbles[bubbles.length - 1] : null;
+            },
+
+            scrollChatToBottom: () => {
+                const container = document.getElementById('chat-messages');
+                if (container) requestAnimationFrame(() => { container.scrollTop = container.scrollHeight; });
+            },
+
+            handleChatKeydown: (event) => {
+                if (event.key === 'Enter' && !event.shiftKey) {
+                    event.preventDefault();
+                    App.sendMessage();
+                }
+            },
+
+            autoResizeTextarea: (textarea) => {
+                textarea.style.height = 'auto';
+                textarea.style.height = Math.min(textarea.scrollHeight, 128) + 'px';
+            },
+
+            updateSendButton: () => {
+                const btnSend = document.getElementById('btn-send');
+                const btnStop = document.getElementById('btn-stop');
+                if (AppState.isGenerating) {
+                    btnSend.classList.add('hidden');
+                    btnStop.classList.remove('hidden');
+                } else {
+                    btnSend.classList.remove('hidden');
+                    btnStop.classList.add('hidden');
+                }
+            },
+
+            sendMessage: async () => {
+                if (AppState.isGenerating) return;
+                const input = document.getElementById('ai-input');
+                const content = input.value.trim();
+                if (!content) return;
+
+                AppState.chatMessages.push({ role: 'user', content });
+                StorageSys.saveChatMessages(AppState.chatMessages);
+                App.appendMessageBubble('user', content);
+                input.value = '';
+                input.style.height = 'auto';
+
+                AppState.isGenerating = true;
+                AppState.abortController = new AbortController();
+                App.updateSendButton();
+
+                const aiBubble = App.appendMessageBubble('assistant', '', true);
+                let fullContent = '';
+
+                try {
+                    const reader = await APIService.chatStream(
+                        AppState.chatMessages,
+                        AppState.aiSettings.apiKey,
+                        AppState.aiSettings.model,
+                        AppState.aiSettings.baseUrl,
+                        AppState.abortController.signal
+                    );
+                    const decoder = new TextDecoder();
+                    let buffer = '';
+                    while (true) {
+                        const { done, value } = await reader.read();
+                        if (done) break;
+                        buffer += decoder.decode(value, { stream: true });
+                        const lines = buffer.split('\n');
+                        buffer = lines.pop() || '';
+                        for (const line of lines) {
+                            const trimmed = line.trim();
+                            if (trimmed.startsWith('data: ')) {
+                                const dataStr = trimmed.slice(6);
+                                if (dataStr === '[DONE]') break;
+                                try {
+                                    const json = JSON.parse(dataStr);
+                                    const delta = json.choices?.[0]?.delta?.content;
+                                    if (delta) {
+                                        fullContent += delta;
+                                        try { aiBubble.innerHTML = marked.parse(fullContent) || ''; } catch (e) { aiBubble.textContent = fullContent; }
+                                        App.scrollChatToBottom();
+                                    }
+                                } catch (e) {}
+                            }
+                        }
+                    }
+                    aiBubble.classList.remove('typing-cursor');
+                    AppState.chatMessages.push({ role: 'assistant', content: fullContent });
+                    StorageSys.saveChatMessages(AppState.chatMessages);
+                } catch (error) {
+                    if (error.name === 'AbortError') {
+                        aiBubble.classList.remove('typing-cursor');
+                        if (fullContent) {
+                            AppState.chatMessages.push({ role: 'assistant', content: fullContent + ' [已中断]' });
+                            StorageSys.saveChatMessages(AppState.chatMessages);
+                            try { aiBubble.innerHTML = marked.parse(fullContent + ' *[已中断]*') || (fullContent + ' [已中断]'); } catch (e) { aiBubble.textContent = fullContent + ' [已中断]'; }
+                        } else {
+                            aiBubble.textContent = '⏹ 生成已停止';
+                            AppState.chatMessages.push({ role: 'assistant', content: '⏹ 生成已停止' });
+                            StorageSys.saveChatMessages(AppState.chatMessages);
+                        }
+                    } else {
+                        console.error('AI请求失败:', error);
+                        aiBubble.classList.remove('typing-cursor');
+                        aiBubble.textContent = '❌ ' + (error.message || '请求失败，请检查网络');
+                        aiBubble.style.color = '#f87171';
+                        AppState.chatMessages.push({ role: 'assistant', content: '❌ ' + (error.message || '请求失败') });
+                        StorageSys.saveChatMessages(AppState.chatMessages);
+                    }
+                }
+                AppState.isGenerating = false;
+                AppState.abortController = null;
+                App.updateSendButton();
+                App.scrollChatToBottom();
+            },
+
+            stopGenerating: (silent = false) => {
+                if (AppState.abortController) {
+                    AppState.abortController.abort();
+                    AppState.abortController = null;
+                }
+                AppState.isGenerating = false;
+                App.updateSendButton();
+                if (!silent) {
+                    const lastBubble = App.getLastAiBubble();
+                    if (lastBubble) lastBubble.classList.remove('typing-cursor');
+                }
+            },
+
+            sendQuickQuestion: (question) => {
+                const input = document.getElementById('ai-input');
+                input.value = question;
+                App.sendMessage();
+            },
+
+            clearChat: () => {
+                if (AppState.isGenerating) App.stopGenerating(true);
+                AppState.chatMessages = [];
+                StorageSys.clearChatMessages();
+                const container = document.getElementById('chat-messages');
+                container.querySelectorAll('.chat-msg-user, .chat-msg-ai').forEach(el => el.remove());
+                document.getElementById('chat-welcome').classList.remove('hidden');
+                Utils.showToast('对话已清空 🧹');
+            },
+
+            // 播放等其他方法保持不变...
+            playAnime: async (bgmId, targetEpIndex = 0, startTime = 0) => {
+                App.route('player');
+                AppState.currentEpIndex = targetEpIndex;
+                Utils.showToast('正在加载资源...', 1500);
+                document.getElementById('det-title').innerText = "加载中...";
+                document.getElementById('dplayer').innerHTML = '<div class="w-full h-full flex items-center justify-center bg-gray-900 text-purple-400"><i class="fa-solid fa-spinner fa-spin text-2xl"></i></div>';
+                document.getElementById('ep-grid').innerHTML = '';
+                document.getElementById('ep-tabs').innerHTML = '';
+                try {
+                    const bgmDetail = await APIService.getBgmDetail(bgmId);
+                    AppState.currentAnime = bgmDetail;
+                    const animeName = bgmDetail.name_cn || bgmDetail.name;
+                    document.getElementById('det-title').innerText = animeName;
+                    document.getElementById('det-origin-title').innerText = bgmDetail.name;
+                    document.getElementById('det-score').innerText = (bgmDetail.rating?.score ?? '-.-').toString();
+                    document.getElementById('det-summary').innerText = bgmDetail.summary || '暂无简介';
+                    document.getElementById('det-date').innerText = bgmDetail.date || '未知';
+                    const tags = (bgmDetail.tags || []).slice(0, 5);
+                    document.getElementById('det-tags').innerHTML = tags.map(t => `<span class="bg-purple-500/10 text-[10px] text-purple-300 px-2 py-0.5 rounded-full border border-purple-500/15">${t.name}</span>`).join('');
+                    const favBtn = document.getElementById('btn-fav');
+                    const isFav = StorageSys.isFav(bgmId);
+                    favBtn.innerHTML = isFav ? '<i class="fa-solid fa-heart"></i>' : '<i class="fa-regular fa-heart"></i>';
+                    favBtn.classList.toggle('text-pink-400', isFav);
+                    favBtn.classList.toggle('text-purple-400', !isFav);
+                    Utils.showToast('正在搜寻视频源...', 2000);
+                    const [eps, danMap] = await Promise.all([
+                        APIService.getVodSource(animeName),
+                        APIService.getDanmakuMapping(animeName)
+                    ]);
+                    if (eps.length === 0) throw new Error("未解析到任何视频源");
+                    AppState.currentEps = eps;
+                    AppState.danmakuIdMap = danMap;
+                    AppState.sortAsc = true;
+                    AppState.epRangeIndex = Math.floor(targetEpIndex / 30);
+                    App.renderEpPanel();
+                    App.triggerPlay(targetEpIndex, startTime);
+                } catch (error) {
+                    console.error(error);
+                    Utils.showToast('资源解析失败', 4000);
+                    document.getElementById('dplayer').innerHTML = `<div class="w-full h-full flex flex-col items-center justify-center bg-gray-900 text-purple-400/40 p-6 text-center"><i class="fa-solid fa-triangle-exclamation text-4xl mb-3 text-pink-400/40"></i><p class="text-sm font-bold">资源获取失败</p><p class="text-xs mt-1">${error.message || '请更换番剧或稍后再试'}</p></div>`;
+                }
+            },
+            renderEpPanel: () => {
+                const list = AppState.sortAsc ? AppState.currentEps : [...AppState.currentEps].reverse();
+                const pageSize = 30;
+                const pageCount = Math.ceil(list.length / pageSize);
+                const tabsHtml = Array.from({length: pageCount}).map((_, i) => {
+                    const start = i * pageSize + 1;
+                    const end = Math.min((i + 1) * pageSize, list.length);
+                    const isActive = i === AppState.epRangeIndex;
+                    return `<button onclick="AppState.epRangeIndex=${i}; App.renderEpPanel()" class="whitespace-nowrap px-3 py-1 rounded-full transition text-xs font-medium ${isActive ? 'bg-purple-600 text-white shadow-lg' : 'bg-purple-500/10 text-purple-300 hover:bg-purple-500/20'}">${start}-${end}</button>`;
+                }).join('');
+                document.getElementById('ep-tabs').innerHTML = pageCount > 1 ? tabsHtml : '';
+                const currentList = list.slice(AppState.epRangeIndex * pageSize, (AppState.epRangeIndex + 1) * pageSize);
+                document.getElementById('ep-grid').innerHTML = currentList.map((ep, i) => {
+                    const realIndex = AppState.sortAsc ? (AppState.epRangeIndex * pageSize + i) : (list.length - 1 - (AppState.epRangeIndex * pageSize + i));
+                    let displayNum = Utils.extractEpNum(ep.name);
+                    if(displayNum.length > 4) displayNum = i+1;
+                    return `<div id="ep-btn-${realIndex}" onclick="App.triggerPlay(${realIndex})" class="ep-btn group relative" title="${ep.name}"><span class="text-sm font-bold">${displayNum}</span></div>`;
+                }).join('');
+                App.highlightCurrentEp();
+            },
+            reverseEps: () => { AppState.sortAsc = !AppState.sortAsc; AppState.epRangeIndex = 0; App.renderEpPanel(); },
+            highlightCurrentEp: () => {
+                document.querySelectorAll('.ep-btn').forEach(b => b.classList.remove('ep-active'));
+                const curBtn = document.getElementById(`ep-btn-${AppState.currentEpIndex}`);
+                if (curBtn) curBtn.classList.add('ep-active');
+            },
+            triggerPlay: async (epIndex, startTime = 0) => {
+                const epData = AppState.currentEps[epIndex];
+                if (!epData) return;
+                AppState.currentEpIndex = epIndex;
+                App.highlightCurrentEp();
+                const targetPage = Math.floor(epIndex / 30);
+                if(AppState.epRangeIndex !== targetPage && AppState.sortAsc) { AppState.epRangeIndex = targetPage; App.renderEpPanel(); }
+                if (AppState.dplayerInstance) { try { AppState.dplayerInstance.destroy(); } catch (e) {} AppState.dplayerInstance = null; }
+                const el = document.getElementById('dplayer');
+                el.innerHTML = '';
+                const epNumStr = Utils.extractEpNum(epData.name);
+                const danEpisodeId = AppState.danmakuIdMap[epNumStr];
+                const dpConfig = {
+                    container: el,
+                    autoplay: true,
+                    theme: '#a78bfa',
+                    video: { url: epData.url, type: 'auto' },
+                    contextmenu: [
+                        { text: 'Xingyuan-Anime', link: '#' },
+                        { text: 'Version 2026.5', link: '#' }
+                    ]
+                };
+                if (danEpisodeId) {
+                    dpConfig.danmaku = {
+                        id: danEpisodeId.toString(),
+                        api: '',
+                        bottom: '15%',
+                        unlimited: true,
+                        backend: {
+                            load: function (endpoint, callback) { APIService.fetchDplayerDanmaku(danEpisodeId).then(dans => callback(null, { code: 0, data: dans })).catch(err => callback(err)); },
+                            send: function (endpoint, danmakuData, callback) { callback(null, { code: 0, data: danmakuData }); }
+                        }
+                    };
+                }
+                const dp = new DPlayer(dpConfig);
+                AppState.dplayerInstance = dp;
+                const doSeek = (time) => {
+                    if (time > 0) {
+                        const seekOnce = () => { try { dp.seek(time); } catch (e) {} };
+                        if (dp.video.readyState >= 2) { seekOnce(); }
+                        else { dp.on('canplay', function handler() { seekOnce(); dp.off('canplay', handler); }); }
+                    }
+                };
+                if (startTime > 0) { doSeek(startTime); }
+                else { const hist = StorageSys.getHistory()[AppState.currentAnime.id]; if (hist && hist.epIndex === epIndex && hist.time > 5) { doSeek(hist.time); } }
+                dp.on('ended', () => {
+                    if (epIndex + 1 < AppState.currentEps.length) {
+                        Utils.showToast('即将播放下一集...');
+                        setTimeout(() => App.triggerPlay(epIndex + 1), 2000);
+                    } else { Utils.showToast('全部剧集播放完毕 🎉'); }
+                });
+            },
+            toggleFavorite: () => {
+                if (!AppState.currentAnime) return;
+                const isFav = StorageSys.toggleFav(AppState.currentAnime);
+                const favBtn = document.getElementById('btn-fav');
+                favBtn.innerHTML = isFav ? '<i class="fa-solid fa-heart"></i>' : '<i class="fa-regular fa-heart"></i>';
+                favBtn.classList.toggle('text-pink-400', isFav);
+                favBtn.classList.toggle('text-purple-400', !isFav);
+            }
+        };
+
+        document.addEventListener('DOMContentLoaded', App.init);
+    </script>
+</body>
+</html>
